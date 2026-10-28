@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harmony tempo demo</title><link rel="icon" type="image/svg+xml" href="icon.svg">
+<style>
+body{font-family:system-ui,sans-serif;max-width:34rem;margin:1rem auto;padding:0 1rem;color:#1a1a1a;background:#fff}
+@media (prefers-color-scheme:dark){body{color:#eee;background:#161616}}
+h1{font-size:1.2rem} fieldset{border:1px solid #888;border-radius:6px;margin:.8rem 0}
+.row{display:flex;gap:.6rem;align-items:center;margin:.35rem 0} .row label{width:5.5rem}
+input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
+#read div{margin:.2rem 0;font-variant-numeric:tabular-nums} .small{font-size:.85rem;opacity:.8}
+.ok{color:#1b7a3a}.bad{color:#b3261e}
+</style></head><body>
+<h1>Harmony tempo demo (proof of concept)</h1>
+<p class="small">Dummy audio: four generated parts (guitar, lead, tenor, baritone), 100 bpm, 8 bars. Slower copies were made once, offline, with Rubber Band, which changes the tempo and keeps the pitch. The page just switches files and keeps its place.</p>
+<p class="small"><b>The tempo control has been built and checked on a desktop browser only so far.</b> It has not been tried on phones or tablets.</p>
+<fieldset><legend>Transport</legend>
+<button id="play">Play</button> <button id="stop">Stop</button>
+<label><input type="checkbox" id="loop"> Loop bars 3 and 4</label>
+</fieldset>
+<fieldset><legend>Tempo</legend>
+<label><input type="radio" name="speed" value="1" checked> 100%</label>
+<label><input type="radio" name="speed" value="0.8"> 80%</label>
+<label><input type="radio" name="speed" value="0.65"> 65%</label>
+</fieldset>
+<fieldset><legend>Method</legend>
+<label><input type="radio" name="method" value="pre" checked> Pre-rendered slow files (pitch kept)</label><br>
+<label><input type="radio" name="method" value="rate"> Just slow the playback (pitch drops, for comparison)</label>
+</fieldset>
+<fieldset><legend>Volume</legend><div id="vols"></div></fieldset>
+<fieldset><legend>What the page measures</legend><div id="read">
+<div id="r_speed"></div><div id="r_pos"></div><div id="r_pitch"></div><div id="r_sync"></div></div></fieldset>
+<div id="msg" class="small"></div>
+<script>
+const VOICES=['guitar','lead','tenor','baritone'], SPEEDS={'1':'100','0.8':'80','0.65':'65'};
+const LOOP=[4.8,9.6]; // bars 3 and 4 in musical seconds at 100 bpm
+let ctx, mel, analyser, gains={}, buffers={}, sources=[], playing=false;
+let speed=1, playSpeed=1, method='pre', pos=0, startCtx=0, startPos=0, loopOn=false, startTimes=[];
+const $=id=>document.getElementById(id);
+for(const v of VOICES){const d=document.createElement('div');d.className='row';
+ d.innerHTML=`<label for="v_${v}">${v}</label><input type="range" id="v_${v}" min="0" max="1" step="0.01" value="${v==='guitar'?0.5:0.7}">`;$('vols').appendChild(d);}
+async function init(){
+ if(ctx) return; ctx=new (window.AudioContext||window.webkitAudioContext)();
+ mel=await (await fetch('melody.json')).json(); Object.keys(SPEEDS).forEach(k=>getBuffers(SPEEDS[k])); // preload all speeds
+ analyser=ctx.createAnalyser(); analyser.fftSize=8192; // about 0.19 s of sound, shorter than one beat analyser.smoothingTimeConstant=0;
+ for(const v of VOICES){const g=ctx.createGain(); g.gain.value=+$('v_'+v).value; g.connect(ctx.destination); gains[v]=g;
+  $('v_'+v).addEventListener('input',e=>{g.gain.value=+e.target.value});
+  if(v==='lead') g.connect(analyser);}
+}
+async function getBuffers(key){ // key '100','80','65'
+ if(buffers[key]) return buffers[key];
+ const b={}; await Promise.all(VOICES.map(async v=>{const r=await fetch(`audio/${v}-${key}.mp3`); b[v]=await ctx.decodeAudioData(await r.arrayBuffer());}));
+ return buffers[key]=b;}
+function musicalPos(){ if(!playing) return pos; let m=startPos+(ctx.currentTime-startCtx)*playSpeed; // playSpeed = speed of the sources now running
+ if(loopOn&&m>=LOOP[0]){const L=LOOP[1]-LOOP[0]; m=LOOP[0]+((m-LOOP[0])%L);} return m;}
+function stopSources(){for(const s of sources){try{s.stop()}catch(e){} s.disconnect();} sources=[];}
+async function start(){
+ await init(); await ctx.resume();
+ const key= method==='pre'?SPEEDS[speed]:'100'; const b=await getBuffers(key);
+ const rate= method==='pre'?1:speed; const f= method==='pre'?speed:1; // file time = musical / f (pre) or musical (rate)
+ if(playing) pos=musicalPos(); // take the place after loading, so load time is not lost
+ stopSources(); const t0=ctx.currentTime+0.1; startTimes=[];
+ for(const v of VOICES){const s=ctx.createBufferSource(); s.buffer=b[v]; s.playbackRate.value=rate; s.connect(gains[v]);
+  if(loopOn){s.loop=true; s.loopStart=LOOP[0]/f; s.loopEnd=LOOP[1]/f;}
+  s.start(t0,pos/f); sources.push(s); startTimes.push(t0);}
+ startCtx=t0; startPos=pos; playSpeed=speed; playing=true; $('play').textContent='Pause';
+ for(const s of sources.slice(0,1)) s.onended=()=>{ if(playing&&!loopOn&&musicalPos()>=mel.duration-0.05){pos=0;playing=false;$('play').textContent='Play';} };
+}
+function pause(){ pos=musicalPos(); playing=false; stopSources(); $('play').textContent='Play'; }
+async function restartKeepingPlace(){ if(playing){ await start(); } }
+$('play').onclick=async()=>{ if(playing) pause(); else await start(); };
+$('stop').onclick=()=>{ if(ctx){pause();} pos=0; };
+$('loop').onchange=async e=>{loopOn=e.target.checked; if(loopOn&&pos<LOOP[0]&&!playing) pos=LOOP[0]; await restartKeepingPlace();};
+document.querySelectorAll('input[name=speed]').forEach(r=>r.onchange=async e=>{speed=+e.target.value; await restartKeepingPlace();});
+document.querySelectorAll('input[name=method]').forEach(r=>r.onchange=async e=>{method=e.target.value; await restartKeepingPlace();});
+function peakHz(){ const a=new Float32Array(analyser.frequencyBinCount); analyser.getFloatFrequencyData(a);
+ const bin=ctx.sampleRate/analyser.fftSize; let k=Math.floor(150/bin), best=k; for(let i=k;i<a.length*0.5;i++) if(a[i]>a[best]) best=i;
+ if(best<2||a[best]<-70) return null; const l=a[best-1],c=a[best],r=a[best+1]; const d=0.5*(l-r)/(l-2*c+r); return (best+d)*bin; }
+function expectedHz(m){ return mel.lead[Math.min(mel.beats-1,Math.floor(m/mel.beat))]; }
+function measure(){ if(!ctx||!mel) return {};
+ const m=musicalPos(); const hz=playing?peakHz():null; const exp=expectedHz(m);
+ const cents=hz?1200*Math.log2(hz/exp):null; return {speed,method,musical:m,file:method==='pre'?m/speed:m,playing,hz,exp,cents,startTimes:startTimes.slice(),loopOn}; }
+window.__demo={measure, setSpeed:async v=>{speed=v; await restartKeepingPlace();}, setMethod:async v=>{method=v; await restartKeepingPlace();}, get playing(){return playing}};
+setInterval(()=>{ const r=measure(); if(!r.exp) return;
+ $('r_speed').textContent=`Speed ${Math.round(r.speed*100)}%, method: ${r.method==='pre'?'pre-rendered files':'playback rate'}`;
+ $('r_pos').textContent=`Place in the song: ${r.musical.toFixed(2)} s at full speed (${r.file.toFixed(2)} s into the file playing)`;
+ $('r_pitch').innerHTML= r.hz? `Lead part: expected ${r.exp.toFixed(1)} Hz, heard ${r.hz.toFixed(1)} Hz, <span class="${Math.abs(r.cents)<40?'ok':'bad'}">${r.cents>0?'+':''}${r.cents.toFixed(0)} cents</span>`:'Lead part: press Play';
+ $('r_sync').textContent= r.startTimes.length?`All ${r.startTimes.length} parts started at the same instant (${r.startTimes[0].toFixed(3)} s on the audio clock)`:'';
+},100);
+</script></body></html>
