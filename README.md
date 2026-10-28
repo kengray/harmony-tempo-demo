@@ -12,6 +12,7 @@ Shows one way to give a harmony practice player a speed control: **make slower c
 - v7: slower files made with Rubber Band in offline mode (R3 "finer" engine) through `prerender.py`. The ffmpeg filter used before works in real-time mode and left a wobble on steady notes at 65%. Measured on the lead: level wobble 1.0 dB to 0.15 dB, pitch swing 29 cents to 0.4 cents; reverb-like tail on plucks 0.044 to 0.003.
 - v8: iPad and iPhone fix. The audio is now created and resumed straight from the tap (Safari ignores it otherwise), the page asks for the "playback" audio session so the mute switch does not silence it, and it says so on the page if the device still blocks audio. Same fix the offline demo already had.
 - v9: 20 ms fade out of the old parts and fade in of the new ones when switching speed, pausing or looping the start, to remove the click.
+- v10: the device note on the page and in this README now says what was checked (desktop, Android phone, iPad).
 
 ## Run it
 The page loads audio with fetch, so it needs a web server, not a double-click:
@@ -19,7 +20,7 @@ The page loads audio with fetch, so it needs a web server, not a double-click:
     python3 -m http.server 8000
     # then open http://localhost:8000/
 
-**Desktop only so far.** The tempo control has been built and checked in a desktop browser. It has not been tried on phones or tablets.
+**Checked on:** a desktop browser, an Android phone and an iPad (by ear, by Ken). Not yet tried on an iPhone.
 
 This demo is separate from the offline demo (offline-harmony-demo). Suggested repository name: `harmony-tempo-demo`.
 
@@ -40,7 +41,7 @@ This demo is separate from the offline demo (offline-harmony-demo). Suggested re
 ## What this does not show
 - **Vibrato on real voices.** Time-stretching slows a singer's vibrato by the same factor as the song, so a slowed vocal wobbles more slowly than the singer would. The dummy parts have no vibrato so this cannot be heard here.
 - **How it sounds on real voices.** Tones are easy to stretch. Real harmony vocals can pick up artefacts, so listen to a real song before choosing the stretch settings.
-- Phones and Safari: only checked in desktop Chromium, not by ear and not on an iPhone.
+- iPhone: not tried. Android and iPad were checked by ear.
 - How the key slider behaves together with a slow copy (the demo has no key control).
 
 ## Making the files
