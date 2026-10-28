@@ -46,7 +46,7 @@ async def main():
         for _ in range(40):
             r=await pg.evaluate('__demo.measure()'); seen.append(r['musical']); await pg.wait_for_timeout(250)
         chk('loop keeps the place inside bars 3 and 4',all(4.7<=x<=9.7 for x in seen[2:]),f"min {min(seen[2:]):.2f} max {max(seen[2:]):.2f}")
-        chk('version v8 shown in the heading and matches the code',(await pg.inner_text('#ver')).strip()=='v8' and (await pg.evaluate('window.__demo.version'))=='8')
+        chk('version v9 shown in the heading and matches the code',(await pg.inner_text('#ver')).strip()=='v9' and (await pg.evaluate('window.__demo.version'))=='9')
         chk('no page errors',not errs,errs[:2])
         await b.close()
 asyncio.run(main()); srv.terminate()

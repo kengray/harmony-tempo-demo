@@ -10,7 +10,7 @@ input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
 #read div{margin:.2rem 0;font-variant-numeric:tabular-nums} .small{font-size:.85rem;opacity:.8}
 .ok{color:#1b7a3a}.bad{color:#b3261e}
 </style></head><body>
-<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v8</span></h1>
+<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v9</span></h1>
 <p class="small">Dummy audio: four generated parts (guitar, lead, tenor, baritone), 100 bpm, 8 bars. Slower copies were made once, offline, with Rubber Band, which changes the tempo and keeps the pitch. The page just switches files and keeps its place.</p>
 <p class="small"><b>The tempo control has been built and checked on a desktop browser only so far.</b> It has not been tried on phones or tablets.</p>
 <fieldset><legend>Transport</legend><div id="state" class="small" role="status"></div>
@@ -31,7 +31,7 @@ input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
 <div id="r_speed"></div><div id="r_pos"></div><div id="r_pitch"></div><div id="r_sync"></div></div></fieldset>
 <div id="msg" class="small"></div>
 <script>
-const APP_VERSION='8'; // change together with the v-number in the heading; also busts the browser cache for the audio
+const APP_VERSION='9'; // change together with the v-number in the heading; also busts the browser cache for the audio
 const VOICES=['guitar','lead','tenor','baritone'], SPEEDS={'1':'100','0.8':'80','0.65':'65'};
 const LOOP=[4.8,9.6]; // bars 3 and 4 in musical seconds at 100 bpm
 let ctx, ready=false, mel, analyser, gains={}, buffers={}, sources=[], playing=false;
@@ -54,7 +54,11 @@ async function getBuffers(key){ // key '100','80','65'
  return buffers[key]=b;}
 function musicalPos(){ if(!playing) return pos; let m=startPos+(ctx.currentTime-startCtx)*playSpeed; // playSpeed = speed of the sources now running
  if(loopOn&&m>=LOOP[0]){const L=LOOP[1]-LOOP[0]; m=LOOP[0]+((m-LOOP[0])%L);} return m;}
-function stopSources(){for(const s of sources){try{s.stop()}catch(e){} s.disconnect();} sources=[];}
+const FADE=0.02;   // seconds; a hard cut or a hard start is a click
+function stopSources(){const now=ctx.currentTime;
+ for(const s of sources){const e=s._env; try{e.gain.cancelScheduledValues(now); e.gain.setValueAtTime(e.gain.value,now); e.gain.linearRampToValueAtTime(0,now+FADE); s.stop(now+FADE+0.01);}catch(x){}
+  setTimeout(()=>{try{s.disconnect();e.disconnect();}catch(x){}},(FADE+0.1)*1000);}
+ sources=[];}
 let startSeq=0;
 async function start(){
  const mySeq=++startSeq;   // a quick second click or speed change makes the earlier start stand down, so two sets of parts never overlap
@@ -71,7 +75,8 @@ async function start(){
  const rate= method==='pre'?1:speed; const f= method==='pre'?speed:1; // file time = musical / f (pre) or musical (rate)
  if(playing) pos=musicalPos(); // take the place after loading, so load time is not lost
  stopSources(); const t0=ctx.currentTime+0.1; startTimes=[];
- for(const v of VOICES){const s=ctx.createBufferSource(); s.buffer=b[v]; s.playbackRate.value=rate; s.connect(gains[v]);
+ for(const v of VOICES){const s=ctx.createBufferSource(); s.buffer=b[v]; s.playbackRate.value=rate;
+  const env=ctx.createGain(); env.gain.setValueAtTime(0,t0); env.gain.linearRampToValueAtTime(1,t0+FADE); s.connect(env); env.connect(gains[v]); s._env=env;
   if(loopOn){s.loop=true; s.loopStart=LOOP[0]/f; s.loopEnd=LOOP[1]/f;}
   s.start(t0,pos/f); sources.push(s); startTimes.push(t0);}
  startCtx=t0; startPos=pos; playSpeed=speed; playing=true; $('play').textContent='Pause';
