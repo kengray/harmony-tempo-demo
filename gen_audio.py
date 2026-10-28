@@ -17,13 +17,13 @@ STEP = [0, 2, 4, 5, 7, 9, 11]                       # major scale in semitones
 def hz(d): return 392.00 * 2 ** (((d // 7) * 12 + STEP[d % 7]) / 12)   # degree 0 = G4
 tune = [0, 1, 2, 4,   4, 2, 1, 0,   3, 4, 5, 4,   3, 5, 4, 2,   4, 5, 6, 7,   7, 6, 4, 2,   4, 2, 1, 0,   0, 1, 0, 0]
 roots = [98.00, 98.00, 130.81, 146.83, 146.83, 130.81, 146.83, 98.00]    # G G C D D C D G, one per bar
-def voice(freqs_per_beat, vib=True):
+def voice(freqs_per_beat, vib=False):   # no vibrato: stretching slows a vibrato along with the song (5.5 Hz becomes 4.4 Hz at 80%, 3.6 Hz at 65%), which sounds like a warble
     out = np.zeros(n)
     for b in range(beats):
         s, e = int(b * beat * sr), int((b + 1) * beat * sr)
         f = freqs_per_beat[b]
         tt = np.arange(e - s) / sr
-        v = 1 + (0.004 * np.sin(2 * np.pi * 5.5 * tt) if vib else 0)
+        v = 1 + (0.004 * np.sin(2 * np.pi * 5.5 * tt) if vib else np.zeros_like(tt))
         ph = 2 * np.pi * np.cumsum(f * v) / sr
         w = np.sin(ph) + 0.25 * np.sin(2 * ph) + 0.1 * np.sin(3 * ph)
         env = np.minimum(1, tt / 0.02) * np.minimum(1, np.maximum(0, (beat * 0.82 - tt)) / 0.06)   # a short gap between notes

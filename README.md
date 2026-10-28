@@ -8,6 +8,7 @@ Shows one way to give a harmony practice player a speed control: **make slower c
 - v3: a real tune instead of near-constant tones, so "Loop bars 3 and 4" is audible (the old loop section held almost one pitch). Harmony parts a third above and below the lead, each bar different.
 - v4: audio and melody requests carry the version number, so a browser cannot show old audio after an update.
 - v5: slower files made with a shorter Rubber Band window (`window=short`), which removes most of the reverb-like tail on the slowed plucked notes.
+- v6: the dummy parts no longer have vibrato. Stretching slows a vibrato with the song (5.5 Hz becomes 4.4 Hz at 80% and 3.6 Hz at 65%), which was heard as a warble on every note.
 
 ## Run it
 The page loads audio with fetch, so it needs a web server, not a double-click:
@@ -34,6 +35,7 @@ This demo is separate from the offline demo (offline-harmony-demo). Suggested re
 - File sizes: constant 128 kbps, so size follows duration: the 80% files are 1.25 times the size of the 100% files, the 65% files 1.54 times.
 
 ## What this does not show
+- **Vibrato on real voices.** Time-stretching slows a singer's vibrato by the same factor as the song, so a slowed vocal wobbles more slowly than the singer would. The dummy parts have no vibrato so this cannot be heard here.
 - **How it sounds on real voices.** Tones are easy to stretch. Real harmony vocals can pick up artefacts, so listen to a real song before choosing the stretch settings.
 - Phones and Safari: only checked in desktop Chromium, not by ear and not on an iPhone.
 - How the key slider behaves together with a slow copy (the demo has no key control).
