@@ -10,7 +10,7 @@ input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
 #read div{margin:.2rem 0;font-variant-numeric:tabular-nums} .small{font-size:.85rem;opacity:.8}
 .ok{color:#1b7a3a}.bad{color:#b3261e}
 </style></head><body>
-<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v2</span></h1>
+<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v3</span></h1>
 <p class="small">Dummy audio: four generated parts (guitar, lead, tenor, baritone), 100 bpm, 8 bars. Slower copies were made once, offline, with Rubber Band, which changes the tempo and keeps the pitch. The page just switches files and keeps its place.</p>
 <p class="small"><b>The tempo control has been built and checked on a desktop browser only so far.</b> It has not been tried on phones or tablets.</p>
 <fieldset><legend>Transport</legend>
@@ -83,7 +83,7 @@ function expectedHz(m){ return mel.lead[Math.min(mel.beats-1,Math.floor(m/mel.be
 function measure(){ if(!ctx||!mel) return {};
  const m=musicalPos(); const hz=playing?peakHz():null; const exp=expectedHz(m);
  const cents=hz?1200*Math.log2(hz/exp):null; return {speed,method,musical:m,file:method==='pre'?m/speed:m,playing,hz,exp,cents,startTimes:startTimes.slice(),loopOn}; }
-const APP_VERSION='2'; // change together with the v-number in the heading
+const APP_VERSION='3'; // change together with the v-number in the heading
 window.__demo={version:APP_VERSION,measure, setSpeed:async v=>{speed=v; await restartKeepingPlace();}, setMethod:async v=>{method=v; await restartKeepingPlace();}, get playing(){return playing}};
 setInterval(()=>{ const r=measure(); if(!r.exp) return;
  $('r_speed').textContent=`Speed ${Math.round(r.speed*100)}%, method: ${r.method==='pre'?'pre-rendered files':'playback rate'}`;

@@ -11,11 +11,12 @@ bars = 8
 beats = bars * 4
 n = int(sr * beat * beats)
 t = np.arange(n) / sr
-# G, C, D, G progression, two bars each pair. Frequencies in Hz.
-G = dict(root=98.00, bar=196.00, baritone=196.00, lead=392.00, tenor=493.88)
-C = dict(root=130.81, bar=261.63, baritone=261.63, lead=523.25, tenor=659.26)
-D = dict(root=146.83, bar=293.66, baritone=293.66, lead=587.33, tenor=739.99)
-chords = [G, G, C, C, D, D, G, G]  # one per bar
+# A short tune in G major, one note per beat, with the harmony parts a third above (tenor) and a third below (baritone)
+# so the parts move together and each bar sounds different. Bars 3 and 4 (the loop) climb and turn, so a loop is easy to hear.
+STEP = [0, 2, 4, 5, 7, 9, 11]                       # major scale in semitones
+def hz(d): return 392.00 * 2 ** (((d // 7) * 12 + STEP[d % 7]) / 12)   # degree 0 = G4
+tune = [0, 1, 2, 4,   4, 2, 1, 0,   3, 4, 5, 4,   3, 5, 4, 2,   4, 5, 6, 7,   7, 6, 4, 2,   4, 2, 1, 0,   0, 1, 0, 0]
+roots = [98.00, 98.00, 130.81, 146.83, 146.83, 130.81, 146.83, 98.00]    # G G C D D C D G, one per bar
 def voice(freqs_per_beat, vib=True):
     out = np.zeros(n)
     for b in range(beats):
@@ -25,22 +26,17 @@ def voice(freqs_per_beat, vib=True):
         v = 1 + (0.004 * np.sin(2 * np.pi * 5.5 * tt) if vib else 0)
         ph = 2 * np.pi * np.cumsum(f * v) / sr
         w = np.sin(ph) + 0.25 * np.sin(2 * ph) + 0.1 * np.sin(3 * ph)
-        env = np.minimum(1, tt / 0.03) * np.minimum(1, (beat - tt) / 0.05)
+        env = np.minimum(1, tt / 0.02) * np.minimum(1, np.maximum(0, (beat * 0.82 - tt)) / 0.06)   # a short gap between notes
         out[s:e] = w * env
     return out
-lead_notes = []
-for bar, ch in enumerate(chords):
-    for k in range(4):
-        # a simple pattern: lead goes up a whole tone on beat 3 of each bar so the pitch is not constant
-        f = ch['lead'] * (1.122462 if k == 2 else 1.0)
-        lead_notes.append(round(f, 2))
-tenor = [chords[b // 4]['tenor'] for b in range(beats)]
-bari = [chords[b // 4]['baritone'] for b in range(beats)]
-# guitar: a pluck on every beat (root), so the tempo is easy to hear
+lead_notes = [round(hz(d), 2) for d in tune]
+tenor = [hz(d + 2) for d in tune]
+bari = [hz(d - 2) for d in tune]
+# guitar: a pluck on every beat (root, then octave), so the tempo is easy to hear
 guitar = np.zeros(n)
 for b in range(beats):
     s = int(b * beat * sr)
-    f = chords[b // 4]['root'] * (2 if b % 4 in (1, 3) else 1)
+    f = roots[b // 4] * (2 if b % 4 in (1, 3) else 1)
     tt = np.arange(int(0.45 * sr)) / sr
     p = (np.sin(2 * np.pi * f * tt) + 0.5 * np.sin(4 * np.pi * f * tt) + 0.3 * np.sin(6 * np.pi * f * tt)) * np.exp(-tt * 7)
     guitar[s:s + len(p)] += p
