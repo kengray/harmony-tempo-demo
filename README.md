@@ -6,6 +6,7 @@ Shows one way to give a harmony practice player a speed control: **make slower c
 - v1: first standalone tempo demo (as the slow-down demo).
 - v2: renamed Harmony tempo demo, desktop-only note, master volume stage (the four parts clipped at default faders), no overlapping parts after quick clicks. The version shows next to the heading.
 - v3: a real tune instead of near-constant tones, so "Loop bars 3 and 4" is audible (the old loop section held almost one pitch). Harmony parts a third above and below the lead, each bar different.
+- v4: audio and melody requests carry the version number, so a browser cannot show old audio after an update.
 
 ## Run it
 The page loads audio with fetch, so it needs a web server, not a double-click:
