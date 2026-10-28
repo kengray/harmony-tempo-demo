@@ -10,9 +10,9 @@ input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
 #read div{margin:.2rem 0;font-variant-numeric:tabular-nums} .small{font-size:.85rem;opacity:.8}
 .ok{color:#1b7a3a}.bad{color:#b3261e}
 </style></head><body>
-<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v10</span></h1>
+<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v11</span></h1>
 <p class="small">Dummy audio: four generated parts (guitar, lead, tenor, baritone), 100 bpm, 8 bars. Slower copies were made once, offline, with Rubber Band, which changes the tempo and keeps the pitch. The page just switches files and keeps its place.</p>
-<p class="small"><b>The tempo control has been checked on a desktop browser, an Android phone and an iPad.</b> It has not been tried on an iPhone.</p>
+<p class="small"><b>The tempo control has been checked in Chrome and Safari, on a desktop, an Android phone and an iPad.</b> It has not been tried on an iPhone.</p>
 <fieldset><legend>Transport</legend><div id="state" class="small" role="status"></div>
 <button id="play">Play</button> <button id="stop">Stop</button>
 <label><input type="checkbox" id="loop"> Loop bars 3 and 4</label>
@@ -31,7 +31,7 @@ input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
 <div id="r_speed"></div><div id="r_pos"></div><div id="r_pitch"></div><div id="r_sync"></div></div></fieldset>
 <div id="msg" class="small"></div>
 <script>
-const APP_VERSION='10'; // change together with the v-number in the heading; also busts the browser cache for the audio
+const APP_VERSION='11'; // change together with the v-number in the heading; also busts the browser cache for the audio
 const VOICES=['guitar','lead','tenor','baritone'], SPEEDS={'1':'100','0.8':'80','0.65':'65'};
 const LOOP=[4.8,9.6]; // bars 3 and 4 in musical seconds at 100 bpm
 let ctx, ready=false, mel, analyser, gains={}, buffers={}, sources=[], playing=false;
