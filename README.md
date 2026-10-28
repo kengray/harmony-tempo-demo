@@ -9,6 +9,7 @@ Shows one way to give a harmony practice player a speed control: **make slower c
 - v4: audio and melody requests carry the version number, so a browser cannot show old audio after an update.
 - v5: slower files made with a shorter Rubber Band window (`window=short`), which removes most of the reverb-like tail on the slowed plucked notes.
 - v6: the dummy parts no longer have vibrato. Stretching slows a vibrato with the song (5.5 Hz becomes 4.4 Hz at 80% and 3.6 Hz at 65%), which was heard as a warble on every note.
+- v7: slower files made with Rubber Band in offline mode (R3 "finer" engine) through `prerender.py`. The ffmpeg filter used before works in real-time mode and left a wobble on steady notes at 65%. Measured on the lead: level wobble 1.0 dB to 0.15 dB, pitch swing 29 cents to 0.4 cents; reverb-like tail on plucks 0.044 to 0.003.
 
 ## Run it
 The page loads audio with fetch, so it needs a web server, not a double-click:
@@ -42,6 +43,6 @@ This demo is separate from the offline demo (offline-harmony-demo). Suggested re
 
 ## Making the files
     python3 gen_audio.py     # the four 100% parts and melody.json
-    sh prerender.sh          # Rubber Band (via ffmpeg) slow copies at 80% and 65%, mp3 128 kbps
+    python3 prerender.py     # Rubber Band (offline, R3 engine) slow copies at 80% and 65%, mp3 128 kbps
 
-Needs ffmpeg built with the rubberband filter, numpy and scipy.
+Needs ffmpeg, numpy and scipy. `prerender.py` calls the Rubber Band library (librubberband, version 3 or later) directly through `rubberband_offline.py`, because ffmpeg's rubberband filter cannot use the offline mode or the finer engine. On Debian or Ubuntu: `apt install librubberband2`.
