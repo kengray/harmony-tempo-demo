@@ -10,6 +10,7 @@ Shows one way to give a harmony practice player a speed control: **make slower c
 - v5: slower files made with a shorter Rubber Band window (`window=short`), which removes most of the reverb-like tail on the slowed plucked notes.
 - v6: the dummy parts no longer have vibrato. Stretching slows a vibrato with the song (5.5 Hz becomes 4.4 Hz at 80% and 3.6 Hz at 65%), which was heard as a warble on every note.
 - v7: slower files made with Rubber Band in offline mode (R3 "finer" engine) through `prerender.py`. The ffmpeg filter used before works in real-time mode and left a wobble on steady notes at 65%. Measured on the lead: level wobble 1.0 dB to 0.15 dB, pitch swing 29 cents to 0.4 cents; reverb-like tail on plucks 0.044 to 0.003.
+- v8: iPad and iPhone fix. The audio is now created and resumed straight from the tap (Safari ignores it otherwise), the page asks for the "playback" audio session so the mute switch does not silence it, and it says so on the page if the device still blocks audio. Same fix the offline demo already had.
 
 ## Run it
 The page loads audio with fetch, so it needs a web server, not a double-click:

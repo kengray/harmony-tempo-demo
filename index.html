@@ -10,10 +10,10 @@ input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
 #read div{margin:.2rem 0;font-variant-numeric:tabular-nums} .small{font-size:.85rem;opacity:.8}
 .ok{color:#1b7a3a}.bad{color:#b3261e}
 </style></head><body>
-<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v7</span></h1>
+<h1>Harmony tempo demo (proof of concept) <span id="ver" class="small" style="font-weight:normal">v8</span></h1>
 <p class="small">Dummy audio: four generated parts (guitar, lead, tenor, baritone), 100 bpm, 8 bars. Slower copies were made once, offline, with Rubber Band, which changes the tempo and keeps the pitch. The page just switches files and keeps its place.</p>
 <p class="small"><b>The tempo control has been built and checked on a desktop browser only so far.</b> It has not been tried on phones or tablets.</p>
-<fieldset><legend>Transport</legend>
+<fieldset><legend>Transport</legend><div id="state" class="small" role="status"></div>
 <button id="play">Play</button> <button id="stop">Stop</button>
 <label><input type="checkbox" id="loop"> Loop bars 3 and 4</label>
 </fieldset>
@@ -31,16 +31,16 @@ input[type=range]{flex:1} button{padding:.4rem .8rem;margin:.15rem}
 <div id="r_speed"></div><div id="r_pos"></div><div id="r_pitch"></div><div id="r_sync"></div></div></fieldset>
 <div id="msg" class="small"></div>
 <script>
-const APP_VERSION='7'; // change together with the v-number in the heading; also busts the browser cache for the audio
+const APP_VERSION='8'; // change together with the v-number in the heading; also busts the browser cache for the audio
 const VOICES=['guitar','lead','tenor','baritone'], SPEEDS={'1':'100','0.8':'80','0.65':'65'};
 const LOOP=[4.8,9.6]; // bars 3 and 4 in musical seconds at 100 bpm
-let ctx, mel, analyser, gains={}, buffers={}, sources=[], playing=false;
+let ctx, ready=false, mel, analyser, gains={}, buffers={}, sources=[], playing=false;
 let speed=1, playSpeed=1, method='pre', pos=0, startCtx=0, startPos=0, loopOn=false, startTimes=[];
 const $=id=>document.getElementById(id);
 for(const v of VOICES){const d=document.createElement('div');d.className='row';
  d.innerHTML=`<label for="v_${v}">${v}</label><input type="range" id="v_${v}" min="0" max="1" step="0.01" value="${v==='guitar'?0.5:0.7}">`;$('vols').appendChild(d);}
 async function init(){
- if(ctx) return; ctx=new (window.AudioContext||window.webkitAudioContext)();
+ if(ready) return; ready=true; ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
  mel=await (await fetch('melody.json?v='+APP_VERSION)).json(); Object.keys(SPEEDS).forEach(k=>getBuffers(SPEEDS[k])); // preload all speeds
  analyser=ctx.createAnalyser(); analyser.fftSize=8192; // about 0.19 s of sound, shorter than one beat analyser.smoothingTimeConstant=0;
  const master=ctx.createGain(); master.gain.value=0.6; master.connect(ctx.destination);   // four parts at the default faders sum to a peak of about 1.4, which clips; 0.6 keeps it under 0.9
@@ -58,7 +58,14 @@ function stopSources(){for(const s of sources){try{s.stop()}catch(e){} s.disconn
 let startSeq=0;
 async function start(){
  const mySeq=++startSeq;   // a quick second click or speed change makes the earlier start stand down, so two sets of parts never overlap
- await init(); await ctx.resume();
+ // iOS and iPadOS Safari only unlock audio when the context is created and resume() is called straight from the tap, before any await.
+ ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+ const unlock=ctx.resume();
+ try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}   // otherwise the mute switch silences Web Audio
+ await init(); await Promise.race([unlock,new Promise(r=>setTimeout(r,1500))]);
+ if(ctx.state!=='running'){ try{ await Promise.race([ctx.resume(),new Promise(r=>setTimeout(r,1500))]); }catch(e){} }
+ if(ctx.state!=='running'){ $('state').textContent='Audio is blocked by the browser or the device (check the silent switch, then tap Play again).'; playing=false; $('play').textContent='Play'; return; }
+ $('state').textContent='';
  const key= method==='pre'?SPEEDS[speed]:'100'; const b=await getBuffers(key);
  if(mySeq!==startSeq) return;
  const rate= method==='pre'?1:speed; const f= method==='pre'?speed:1; // file time = musical / f (pre) or musical (rate)
